@@ -154,6 +154,39 @@ def stabilize(old_reqs: List[Dict], new_reqs: List[Dict], pdiff: List[Dict],
     return out
 
 
+def _paras_of(r: Dict) -> set:
+    return {c["paragraph_id"] for c in r.get("citations", [])}
+
+
+def reconcile_ids(old_reqs: List[Dict], new_reqs: List[Dict]) -> List[Dict]:
+    """The model sometimes reuses an old id for an unrelated requirement. Treat an id whose
+    cited paragraphs share nothing with the old requirement of that id as a new requirement:
+    re-key it to the old requirement citing the same paragraphs, else to a fresh id."""
+    old_map = {r["id"]: r for r in old_reqs}
+    taken = set()
+    out = []
+    for r in new_reqs:
+        o = old_map.get(r["id"])
+        if o is not None and not (_paras_of(o) & _paras_of(r)):
+            r = dict(r, id="")
+        out.append(r)
+        if r["id"]:
+            taken.add(r["id"])
+    nums = [int(i[1:]) for i in list(old_map) + list(taken) if i[1:].isdigit()]
+    next_n = max(nums or [0]) + 1
+    for r in out:
+        if r["id"]:
+            continue
+        match = next((o["id"] for o in old_reqs
+                      if o["id"] not in taken and _paras_of(o) & _paras_of(r)), None)
+        if match is None:
+            match = "R%d" % next_n
+            next_n += 1
+        r["id"] = match
+        taken.add(match)
+    return out
+
+
 def classify_changes(old_reqs: List[Dict], new_reqs: List[Dict], pdiff: List[Dict]) -> List[Dict]:
     changed_paras = {d["id"] for d in pdiff if d["change"] in ("changed", "added", "removed")}
     old_map = {r["id"]: r for r in old_reqs}
@@ -196,7 +229,8 @@ def reanalyze(pid: str, body: AnalyzeBody, user: dict = Depends(require("req:ana
     try:
         ext, m1 = extract(paras, previous=prev["requirements"])
         calls.append(m1)
-        new_reqs = stabilize(prev["requirements"], drop_removed(ext["requirements"], pdiff), pdiff, paras)
+        reids = reconcile_ids(prev["requirements"], drop_removed(ext["requirements"], pdiff))
+        new_reqs = stabilize(prev["requirements"], reids, pdiff, paras)
         ext["requirements"] = new_reqs
         old_map = {r["id"]: r for r in prev["requirements"]}
         changed_paras = {d["id"] for d in pdiff if d["change"] != "equal"}
