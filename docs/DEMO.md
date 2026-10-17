@@ -1,16 +1,17 @@
 # Local Office — three-minute demonstration
 
-Use the minimal Nuxt console at <http://localhost:3000>. This is a rehearsal script, not evidence that every UI step works. On 2026-10-17, verification passed 15 deterministic unit checks and 6 live API checks, with 2 unit skips. Requirements, receipt image extraction, the browser flow, and offline operation still need rehearsal. Never replace a failed call with a fabricated answer.
+Use the minimal Nuxt console at <http://localhost:3000>. This is a rehearsal script, not evidence that every UI step works. On 2026-10-17, verification passed 15 deterministic unit checks and 6 live API checks, with 2 unit skips. The requirements flow (v1 analysis, analyst 403, PM approval, v2 before/after) was clicked through in the Nuxt UI against live models; offline operation still needs rehearsal. The receipt/expense scenario was removed: the hackathon rules exclude receipt scanners. Never replace a failed call with a fabricated answer.
 
 ## Before the clock starts
 
 - Keep the hotspot on: it carries the Mac ↔ DGX connection. Confirm `ssh Hackathonnode` works.
-- Before starting the backend for a clean rehearsal, clear generated files in `data/runtime/` (synthetic state, claims, audit). Preserve the directory and any tracked placeholders. Reset only when no requests are running, then start a fresh backend process: the audit writer caches its last hash. Do not clear a live demo's audit log. This verification pass did not clear runtime or restart the backend.
+- Before starting the backend for a clean rehearsal, clear generated files in `data/runtime/` (synthetic state, audit). Preserve the directory and any tracked placeholders. Reset only when no requests are running, then start a fresh backend process: the audit writer caches its last hash. Do not clear a live demo's audit log. This verification pass did not clear runtime or restart the backend.
 - Bring up the tunnel with the README SSH command, then the backend on :8000 and Nuxt on :3000. `scripts/run.sh` handles the tunnel/backend, not Nuxt. Check all three model badges and `/api/health`.
-- Warm up each model: run `scripts/check_offline.sh` (one real text call per Lightning/Omni/Nano). Run `scripts/check_inference.sh` to capture served roots and measured Lightning latency. A text warm-up does not verify Omni vision: rehearse **Use demo receipt** separately.
+- Warm up each model: run `scripts/check_offline.sh` (one real text call per Lightning/Omni/Nano). Run `scripts/check_inference.sh` to capture served roots and measured Lightning latency.
 - Run `.venv/bin/python -m unittest discover -s tests -t . -v`, then `LIVE=1 .venv/bin/python -m unittest tests.integration.test_api_live -v`. The live suite writes audit entries. If a fresh log is needed afterward, reset runtime before a fresh backend start, then warm/rehearse again.
 - Rehearse both requirements analyses and both Daniel approvals. Confirm v1 §6 appears under **Ignored instructions**, source citations locate actual paragraphs, and v2 produces a real before/after table. No staffing or priority proposal should become approved before the PM decision.
-- Rehearse the leave chip, receipt extraction, Siti's September explanation, and Daniel/Siti's audit view. Inspect the actual receipt category: RM 178.08 client entertainment is within RM 200 but still needs PM pre-approval. If Omni labels it differently, show the real result and flag the discrepancy.
+- Rehearse the leave chip, Siti's September explanation, and Daniel/Siti's audit view.
+- Open a second terminal on the DGX: `ssh Hackathonnode 'watch -n0.5 nvidia-smi'` (or `docker logs -f emq-lightning`), ready to show during a live call.
 - Time the full sequence on this hardware. These are target time slots; model calls can run longer. Keep a terminal ready for real errors, live test evidence, and DGX telemetry. Do not promise a three-minute runtime until rehearsed.
 
 ## 0:00–1:00 — requirements and the first approval
@@ -27,9 +28,9 @@ Use the minimal Nuxt console at <http://localhost:3000>. This is a rehearsal scr
 
 **1:40–2:00.** Switch to Aisyah, open **Onboarding**, and click **How many days of annual leave do I get?** Show the policy answer and `LV-…` citation chip(s). Say: “The model receives only policy sections authorized for this role.” A live leave answer with citations passed verification; invalid-citation filtering and forced escalation were not unit-tested because they have no pure helper.
 
-## 2:00–3:00 — finance, executive controls, audit
+## 2:00–3:00 — why the ATOM, executive controls, audit
 
-**2:00–2:25.** Open **Expense claim** as Aisyah and click **Use demo receipt**. Show the real image-extracted vendor, date, currency, amount, and category. Highlight the client-entertainment **PM pre-approval** flag even when RM 178.08 is within RM 200. The claim stays **Pending approval → Finance**; no payment action is shown. The RM 85 meal > RM 60 failure is covered by deterministic tests, not a second UI receipt in this timed script.
+**2:00–2:25.** Why it must run on the ATOM: show the DGX terminal (GPU activity / vLLM log) while a call runs. Say: “Client briefs, IC numbers covered by PDPA, and finance records never leave this box. Three 30B-class Nemotron models (Lightning for reasoning, Nano for Q&A, Omni loaded) run at the same time in 128 GB of unified memory: that is the private office server a consulting firm can own.” Only claim what the badges and terminal show.
 
 **2:25–2:45.** Switch to **Siti Hajar (Executive)**, open **Executive**, and click **Explain September variance**. Point to PRJ-SPL labour: RM 52,000 budget, RM 61,400 actual, **+RM 9,400 / +18.1%**, flagged. Show the narrative's figure-check badge. If `unverified_numbers` is nonempty, show the warning and do not endorse those figures. The invented **RM 200,000** case is a deterministic unit test; it is not injected into the live model response. Say: “The checker flags figures absent from the computed data; it does not establish that every narrative claim is correct.”
 

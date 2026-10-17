@@ -13,7 +13,7 @@ Verified on 2026-10-17 from the presenter's Mac via SSH (`ssh Hackathonnode`, cr
 | Name | Port | Model | Max ctx | GPU mem util | Intended use |
 |---|---|---|---|---|---|
 | `lightning` | 9000 | `nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4` (+ DSpark speculative draft) | 131072 | 0.30 | Requirements extraction, triage, cross-document reasoning |
-| `omni` | 9001 | `nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4` | 32768 | 0.28 | Receipt and image understanding (≤4 images/prompt) |
+| `omni` | 9001 | `nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-NVFP4` | 32768 | 0.28 | Loaded; no workflow uses it after the receipt scenario was removed |
 | `nano` | 9006 | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4` | 65536 | 0.20 | Simple Q&A |
 
 All three are loaded at the same time. With them loaded, memory use was about 109/121 GB, so there is no room for a larger model such as Nemotron Super without stopping these three.

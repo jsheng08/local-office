@@ -4,7 +4,7 @@
 
 Local Office is a proposed private AI operating layer for consulting firms and software houses. It aims to turn confidential client requirements into actionable project work and support employees across onboarding, project management, finance, HR, and executive operations.
 
-> **Project status:** The hackathon application now has a Nuxt console and FastAPI services. Verification on 2026-10-17 passed 15 deterministic unit tests and 6 live API tests; 2 unit checks were skipped. Requirements, receipt inference, the browser click-through, and operation without public internet remain pending verification. See the scoped status table below.
+> **Project status:** The hackathon application now has a Nuxt console and FastAPI services. On 2026-10-17 the deterministic unit tests and 6 live API tests passed, and the requirements workflow was clicked through in the Nuxt UI against live local Nemotron. Operation without public internet remains pending verification. See the scoped status table below.
 
 ## Why local AI
 
@@ -16,7 +16,7 @@ There is no hosted LLM fallback. Hardware, model, and runtime compatibility must
 
 1. **Requirements to delivery plan:** analyze client notes and documents, extract requirements with source references, identify ambiguities, propose stories and acceptance criteria, estimate work with uncertainty, and recommend dependencies and priorities. A person reviews proposed changes before they affect approved plans.
 2. **Employee onboarding:** answer policy questions from authorized local documents, guide onboarding, and escalate unanswered questions.
-3. **Expense claims and finance:** interpret receipts and policy documents, prepare claims or draft invoices and purchase orders, and route them for approval. Deterministic backend code applies financial rules; the AI does not approve or transfer funds.
+3. **Finance:** draft invoices and purchase orders from authorized records and route them for approval (not implemented). Deterministic backend code applies financial rules; the AI does not approve or transfer funds. Receipt scanning is intentionally out of scope (excluded by the hackathon rules).
 4. **HR capacity planning:** analyze workload and capacity for planning. Estimated hours alone must not be treated as an employee performance score.
 5. **Executive reporting:** explain budgets, P&L, and variances using authorized financial records. Arithmetic comes from deterministic code; the AI must not invent figures.
 6. **Security operations:** explore authorized device inventory and security workflows only after their scope and safeguards are designed. Device monitoring is not implemented by this scaffold.
@@ -64,7 +64,7 @@ The layout includes implemented services and planned areas. The status table rec
 ## Development priorities
 
 - **P0:** verify local Nemotron inference; ingest documents; extract cited requirements; propose Kanban tasks; estimate and triage; re-evaluate priorities when new documents arrive.
-- **P1:** onboarding and expense claim workflows; executive financial reporting grounded in actual records.
+- **P1:** onboarding workflow; executive financial reporting grounded in actual records.
 - **P2:** invoice and purchase-order drafting; advanced capacity planning; carefully scoped device/security workflows.
 
 Prioritize one complete, evidence-backed local-AI workflow over a collection of unfinished features.
@@ -127,9 +127,8 @@ Evidence from this verification pass on 2026-10-17; a live API test is not a bro
 
 | Workflow | Implemented | Tested (unit) | Demonstrated live |
 |---|---|---|---|
-| Requirements v1 → approval → v2 → approval | pending verification | pending verification | pending verification |
+| Requirements v1 → approval → v2 → approval | Implemented | Deterministic diff/citation logic not unit-tested | Nuxt UI on live Lightning (2026-10-17): v1 analysis with §6 injection listed as ignored, analyst approval 403, PM approval, v2 before/after (§8 should→must, e-invoicing added, KPI reports removed); v1/v2 each ~22–38 s |
 | Onboarding | Implemented: leave answer API | Tested: section parsing and role filtering; citation rejection/escalation skipped (no pure helper) | Live API: answered with leave citations; UI pending verification |
-| Expense claims | Implemented: deterministic policy checks only | Tested: limits, PM pre-approval flag, currency, future date, path traversal | pending verification |
 | Executive variance | Implemented: September variance API | Tested: RM 9,400 / 18.1% labour overrun; invented RM 200,000 flagged | Live API: Siti 200, `unverified_numbers == []`; UI pending verification |
 | Role permissions | Implemented: tested denials | Tested: analyst cannot approve; HR cannot view executive data | Live API: Haziq/Hana executive 403; Aisyah approval 403 |
 | Audit | Implemented: isolated hash-chain storage | Tested: chaining, ordering, altered/deleted entries, full-chain verification with a result limit | pending verification |
@@ -137,7 +136,7 @@ Evidence from this verification pass on 2026-10-17; a live API test is not a bro
 | HR capacity, invoice/PO drafting, device/security operations | pending verification | pending verification | pending verification |
 | Operation without public internet | pending verification | pending verification | pending verification |
 
-Exact results: unit-only discovery ran **17 tests: 15 passed, 0 failed, 2 skipped**. Default discovery (`-s tests -t .`) ran **23 tests: 15 passed, 0 failed, 8 skipped** (6 opt-in live checks plus the 2 unit skips). `LIVE=1` integration discovery ran **6 tests: 6 passed, 0 failed, 0 skipped**. There were no test errors. Citation filtering and forced escalation live inside `ask()` after inference, so the unit suite explicitly skips those two checks rather than mocking a model answer.
+Exact results (after removing the expense-claim scenario and its tests): default discovery (`-s tests -t .`) runs the remaining unit tests with 0 failures; the earlier pass with finance tests ran **23 tests: 15 passed, 0 failed, 8 skipped** (6 opt-in live checks plus the 2 unit skips). `LIVE=1` integration discovery ran **6 tests: 6 passed, 0 failed, 0 skipped**. There were no test errors. Citation filtering and forced escalation live inside `ask()` after inference, so the unit suite explicitly skips those two checks rather than mocking a model answer.
 
 The reporting scripts completed successfully. Lightning's one-call measurement was **0.131293 s** (a warm text call, not a throughput benchmark). All three local models answered. Both machines could reach `https://huggingface.co`, and both had an IPv4 default gateway of `172.20.10.1` (the Mac route needed a read outside the sandbox). This run does **not** establish offline operation. See [the rehearsal checklist](docs/DEMO.md) before making that claim.
 

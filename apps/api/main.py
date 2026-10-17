@@ -17,7 +17,7 @@ WEB_DIST = ROOT / "apps" / "web" / ".output" / "public"
 
 app = FastAPI(title="Local Office")
 
-ROUTER_MODULES = ["system", "requirements", "onboarding", "finance", "executive"]
+ROUTER_MODULES = ["system", "requirements", "onboarding", "executive"]
 LOADED_ROUTERS = []
 for _name in ROUTER_MODULES:
     try:

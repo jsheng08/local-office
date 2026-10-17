@@ -21,7 +21,6 @@ watch(user, (v) => { try { localStorage.setItem('lo_user', v) } catch {} })
 const tabs = [
   { to: '/', label: 'Requirements → Kanban' },
   { to: '/onboarding', label: 'Onboarding' },
-  { to: '/claims', label: 'Expense claim' },
   { to: '/executive', label: 'Executive' },
   { to: '/audit', label: 'Audit log' },
 ]

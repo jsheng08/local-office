@@ -12,10 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 USERS_PATH = ROOT / "data" / "demo" / "users.json"
 
 ROLE_PERMS: Dict[str, set] = {
-    "analyst": {"project:view", "req:analyze", "onboarding:ask", "claim:submit"},
-    "pm": {"project:view", "req:analyze", "proposal:approve", "onboarding:ask", "claim:submit", "audit:view"},
-    "employee": {"project:view", "onboarding:ask", "claim:submit"},
-    "finance": {"onboarding:ask", "claim:submit", "claim:decide", "exec:view", "audit:view"},
+    "analyst": {"project:view", "req:analyze", "onboarding:ask"},
+    "pm": {"project:view", "req:analyze", "proposal:approve", "onboarding:ask", "audit:view"},
+    "employee": {"project:view", "onboarding:ask"},
+    "finance": {"onboarding:ask", "exec:view", "audit:view"},
     "hr": {"onboarding:ask", "staff:view"},
     "exec": {"project:view", "exec:view", "onboarding:ask", "audit:view"},
 }

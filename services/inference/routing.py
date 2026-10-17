@@ -25,7 +25,6 @@ ROUTES: Dict[str, str] = {
     "triage": "lightning",
     "executive_explain": "lightning",
     "onboarding_qa": "nano",
-    "receipt_extract": "omni",
 }
 
 
