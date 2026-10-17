@@ -12,7 +12,7 @@ async function load() {
   <section>
     <div class="toolbar card">
       <button class="btn primary" :disabled="busy" @click="load">Explain September variance</button>
-      <Spinner :busy="busy" :elapsed="elapsed" />
+      <Spinner :busy="busy" :elapsed="elapsed" :stages="['Computing variances from local finance records', 'Explaining drivers with local Nemotron', 'Checking narrative figures against the records']" />
       <span class="label">Figures computed by deterministic code · narrative by Nemotron</span>
     </div>
     <ErrBox :err="err" hint="Executive view requires the exec or finance role — switch to Siti or Suresh." />

@@ -8,9 +8,15 @@ Local Office is a proposed private AI operating layer for consulting firms and s
 
 ## Why local AI
 
-Local Office is designed to run NVIDIA Nemotron inference on the GIGABYTE AI TOP ATOM (DGX Spark platform, 128 GB unified memory). Keeping inference on organization-operated hardware can help keep sensitive HR, finance, client, project, and security data within the organization's controlled environment. The core workflows should remain available without public internet when their local dependencies are available.
+A consulting firm's most useful AI input is also what it is least free to send to a cloud API:
 
-There is no hosted LLM fallback. Hardware, model, and runtime compatibility must be verified before claiming a workflow runs locally. Local deployment does not by itself provide security; access controls, storage protections, auditing, and operational controls remain necessary.
+- **Client NDAs and data-processing terms.** Many restrict sharing client material with third-party processors or require the client's consent first. A PM with a brief at 6 pm can't get that consent before tomorrow's call.
+- **Personal data in the briefs themselves.** The demo brief asks for IC-number handling for COD customers. Material like this is subject to Malaysia's PDPA, and keeping processing on firm-operated hardware avoids adding another processor to the chain.
+- **The firm's own confidential delivery data.** Budgets, actuals, rates and the staff roster are what make an estimate useful, and they're commercially sensitive.
+
+Local Office runs NVIDIA Nemotron on the GIGABYTE AI TOP ATOM (DGX Spark platform, 128 GB unified memory) with **no hosted LLM fallback**. The 128 GB of unified memory is what lets a large mixture-of-experts model sit on one desk-side box in the office instead of in a data centre; the model actually served is reported by `/api/health` and recorded in [docs/MODEL_CONFIGURATION.md](docs/MODEL_CONFIGURATION.md).
+
+What this does not claim: running locally is not by itself PDPA compliance, and it is not security. Access control, storage protection, auditing and operational controls are still needed, and this prototype uses demo identity rather than real authentication. Operation without public internet is claimed only after it has been tested (see the status table).
 
 ## Product workflows
 

@@ -18,11 +18,15 @@ onMounted(async () => {
 onBeforeUnmount(() => clearInterval(iv))
 watch(user, (v) => { try { localStorage.setItem('lo_user', v) } catch {} })
 
+// Computed only from /api/health — never hardcoded.
+const shortName = (m: any) => String(m?.root || m?.model_id || m?.name || '?').replace(/^.*\//, '')
+const okModels = computed(() => (health.value?.models || []).filter((m: any) => m.ok))
+const fallbackOn = computed(() => !!health.value?.hosted_fallback)
+
 const tabs = [
-  { to: '/', label: 'Requirements → Kanban' },
-  { to: '/onboarding', label: 'Onboarding' },
+  { to: '/', label: 'Client Brief' },
   { to: '/executive', label: 'Executive' },
-  { to: '/audit', label: 'Audit log' },
+  { to: '/audit', label: 'Audit' },
 ]
 </script>
 
@@ -35,38 +39,51 @@ const tabs = [
         <div class="tagline">One ATOM. One Private AI. Your Entire Office.</div>
       </div>
     </div>
-    <div class="status">
-      <div class="models">
-        <div v-for="m in health?.models || []" :key="m.name" class="model" :class="m.ok ? 'ok' : 'bad'" :title="m.base_url + (m.error ? '\n' + m.error : '')">
-          <span class="dot" />
-          <b>{{ m.name }}</b>
-          <span class="mid">{{ m.root || m.model_id }}</span>
-          <span class="lat">{{ m.ok ? fmtNum(m.latency_ms, 0) + ' ms' : 'offline' }}</span>
-        </div>
-        <span v-if="!health && !healthErr" class="muted">Checking local models…</span>
-        <span v-if="healthErr" class="model bad"><span class="dot" />Health check failed: {{ healthErr }}</span>
-      </div>
-      <div class="hostline">
-        <span>{{ health?.host }}</span> ·
-        <span class="nofallback">Hosted fallback: <b>{{ health?.hosted_fallback ? 'ENABLED' : 'none' }}</b></span>
-      </div>
-    </div>
     <div class="right">
       <div class="chip lastcall" :class="{ muted: !lastCall }" :title="lastCall ? JSON.stringify(lastCall, null, 2) : ''">
         <template v-if="lastCall">
-          <span class="lbl">Last call · measured</span>
-          <b>{{ lastCall.model }}</b> · {{ fmtNum(lastCall.latency_ms, 0) }} ms ·
-          {{ fmtNum(lastCall.completion_tokens, 0) }} tok · {{ fmtNum(lastCall.tok_per_s, 1) }} tok/s
+          <span class="tps">{{ fmtNum(lastCall.tok_per_s, 1) }} <small>tok/s</small></span>
+          <span class="lcsub">last call · measured · {{ lastCall.model }} · {{ fmtNum(lastCall.latency_ms, 0) }} ms · {{ fmtNum(lastCall.completion_tokens, 0) }} tok</span>
         </template>
-        <template v-else>Last call: —</template>
+        <template v-else><span class="lcsub">Last call: — (no AI call yet)</span></template>
       </div>
       <label class="user">User
         <select v-model="user">
-          <option v-for="u in users" :key="u.username" :value="u.username">{{ u.display_name }} · {{ u.role }}</option>
+          <option v-for="u in users" :key="u.username" :value="u.username">{{ u.display_name }}</option>
         </select>
       </label>
     </div>
   </header>
+
+  <div class="band" :class="{ bad: healthErr || (health && !okModels.length) || fallbackOn }">
+    <template v-if="healthErr">⚠ Health check failed: {{ healthErr }}</template>
+    <template v-else-if="!health">Checking on-device models…</template>
+    <template v-else>
+      <span>🔒 Running on this ATOM</span>
+      <span class="sep">·</span>
+      <span v-if="okModels.length"><b>{{ okModels.length }}</b> Nemotron model{{ okModels.length === 1 ? '' : 's' }} on-device:
+        <span v-for="(m, i) in okModels" :key="m.name" class="mname">{{ shortName(m) }}{{ i < okModels.length - 1 ? ',' : '' }}</span>
+      </span>
+      <span v-else class="warn">No on-device model reachable right now</span>
+      <span class="sep">·</span>
+      <span>Cloud fallback: <b :class="fallbackOn ? 'warn' : 'none'">{{ fallbackOn ? 'ENABLED' : 'NONE' }}</b></span>
+    </template>
+  </div>
+  <details v-if="health" class="modeldetails">
+    <summary>Model details (live from /api/health) · {{ health.host }}</summary>
+    <table class="tbl">
+      <thead><tr><th>Endpoint</th><th>Model</th><th>Status</th><th>Health latency</th><th>Max context</th></tr></thead>
+      <tbody>
+        <tr v-for="m in health.models || []" :key="m.name">
+          <td><b>{{ m.name }}</b> <code>{{ m.base_url }}</code></td>
+          <td><code>{{ m.root || m.model_id || '—' }}</code></td>
+          <td><span class="pill" :class="m.ok ? 'green' : 'red'">{{ m.ok ? 'reachable' : 'offline' }}</span> <span v-if="m.error" class="muted">{{ m.error }}</span></td>
+          <td>{{ m.ok ? fmtNum(m.latency_ms, 0) + ' ms' : '—' }}</td>
+          <td>{{ m.max_model_len ? fmtNum(m.max_model_len, 0) + ' tokens' : '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </details>
   <nav class="tabs">
     <NuxtLink v-for="t in tabs" :key="t.to" :to="t.to" class="tab" active-class="active" exact-active-class="active">{{ t.label }}</NuxtLink>
   </nav>
