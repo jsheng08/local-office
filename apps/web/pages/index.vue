@@ -59,7 +59,9 @@ function actAs(u: string) { user.value = u }
         :quarantine-count="o.quarantine.value.length" :busy="o.busy.value" :cards="o.cards.value"
         @drop="o.upload" @open-board="openBoard()" @select-staff="(id: string) => openBoard(id)"
         @open-records="navigateTo('/audit')" @select-card="openBoard()" />
+    </div>
 
+    <div class="rail">
       <aside class="hud">
         <div class="k"><span class="dot" :class="o.phase.value" /> Office helper · local Nemotron</div>
         <h2>{{ title }}</h2>
@@ -91,7 +93,6 @@ function actAs(u: string) { user.value = u }
         <ErrBox :err="o.err.value" hint="Only a project manager can approve. Click “Act as PM”." />
         <div v-if="onLeave.length" class="leave">🌴 On leave today: {{ onLeave.map(s => s.name.split(' ')[0]).join(', ') }}</div>
       </aside>
-    </div>
 
     <div class="askcard card">
       <h2>Ask the office <span class="sub">instead of a daily stand-up · answered by local Nemotron from the office notes</span></h2>
@@ -106,6 +107,7 @@ function actAs(u: string) { user.value = u }
         <div class="muted small">{{ askRes.notes_visible }} notes you can access · {{ askRes.meta?.calls?.[0]?.model }} · {{ fmtNum(askRes.meta?.total_latency_ms, 0) }} ms</div>
       </div>
       <ErrBox :err="askErr" />
+    </div>
     </div>
 
     <OfficeBoardModal
@@ -122,8 +124,11 @@ function actAs(u: string) { user.value = u }
 </template>
 
 <style scoped>
+.office { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
+.rail { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 12px; }
+.floorwrap :deep(svg.scene) { display: block; width: 100%; max-height: calc(100vh - 120px); }
 .floorwrap { position: relative; border-radius: 18px; overflow: hidden; background: linear-gradient(#f7f2e9, #ebe1cf); }
-.hud { position: absolute; left: 18px; bottom: 18px; width: 380px; max-width: calc(100% - 36px);
+.hud {
   background: rgba(16, 32, 31, .96); color: #e8f3ee; border-radius: 16px; padding: 16px 18px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, .35); font-size: .8rem; }
 .hud h2 { font-size: 1.15rem; margin: .3rem 0 .5rem; }
@@ -142,7 +147,7 @@ function actAs(u: string) { user.value = u }
 .btns { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
 .btns .btn { font-size: .75rem; padding: .35rem .7rem; }
 .leave { margin-top: .6rem; opacity: .85; }
-.askcard { margin-top: 16px; }
+.askcard { margin: 0; }
 .askrow { display: flex; gap: .5rem; }
 .askrow input { flex: 1; font: inherit; padding: .55rem .8rem; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); }
 .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
@@ -152,5 +157,5 @@ function actAs(u: string) { user.value = u }
 .cites { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .3rem; }
 .cite { font-size: .72rem; background: #1f3317; color: #cfe8a8; border-radius: 6px; padding: .1rem .5rem; }
 .small { font-size: .72rem; }
-@media (max-width: 900px) { .hud { position: static; width: auto; max-width: none; margin: 12px; } }
+@media (max-width: 1100px) { .office { grid-template-columns: 1fr; } .rail { position: static; } }
 </style>
