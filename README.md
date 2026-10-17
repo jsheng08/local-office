@@ -4,7 +4,7 @@
 
 Local Office is a proposed private AI operating layer for consulting firms and software houses. It aims to turn confidential client requirements into actionable project work and support employees across onboarding, project management, finance, HR, and executive operations.
 
-> **Project status:** This repository currently contains project guidance and a proposed structure. Application services and workflows have not yet been implemented. The architecture below is a target, not a claim about working software.
+> **Project status:** The hackathon application now has a Nuxt console and FastAPI services. Verification on 2026-10-17 passed 15 deterministic unit tests and 6 live API tests; 2 unit checks were skipped. Requirements, receipt inference, the browser click-through, and operation without public internet remain pending verification. See the scoped status table below.
 
 ## Why local AI
 
@@ -59,7 +59,7 @@ scripts/                         inference, demo seed, and offline checks
 docs/                            architecture, demo, security, model setup
 ```
 
-The folders are scaffolding. Each service needs an implementation, configuration, and verification before it can be described as functional.
+The layout includes implemented services and planned areas. The status table records what this verification pass actually exercised.
 
 ## Development priorities
 
@@ -71,7 +71,75 @@ Prioritize one complete, evidence-backed local-AI workflow over a collection of 
 
 ## Setup
 
-There is no runnable application or dependency manifest in this initial scaffold yet. Start implementation by selecting and documenting the local inference runtime and model available on the ATOM, then add reproducible setup instructions here. Never silently substitute mock responses or a hosted model for local inference.
+Run these commands from the repository root on the Mac. The backend uses the existing Python 3.9 `.venv` (FastAPI, uvicorn, httpx, Pydantic 2, python-multipart). The DGX must already be serving the local Nemotron models; SSH alias `Hackathonnode` must work. No model download or hosted fallback is part of startup.
+
+1. Open the SSH tunnel in one terminal and leave it running:
+
+   ```bash
+   ssh -N -o ServerAliveInterval=15 -o ExitOnForwardFailure=yes \
+     -L 9000:127.0.0.1:9000 -L 9001:127.0.0.1:9001 \
+     -L 9006:127.0.0.1:9006 Hackathonnode
+   ```
+
+2. Start the backend in another terminal:
+
+   ```bash
+   .venv/bin/uvicorn apps.api.main:app --port 8000
+   ```
+
+   Alternatively, `scripts/run.sh` checks/creates the tunnel and starts this backend. Use it instead of steps 1–2; it does not start Nuxt. Do not start another backend if one is already listening on port 8000.
+
+3. Start the Nuxt frontend in a third terminal:
+
+   ```bash
+   cd apps/web
+   npm install && npm run dev
+   ```
+
+   Open <http://localhost:3000>. Nuxt proxies `/api` to `http://127.0.0.1:8000`; the API is directly available at <http://127.0.0.1:8000/api/health>. Install frontend dependencies while internet is available, then retain `node_modules` for the offline demo. No dependencies were installed during this verification pass. The Nuxt install/build/browser flow has not been verified here.
+
+4. Verify the existing services from the repository root:
+
+   ```bash
+   scripts/check_inference.sh
+   .venv/bin/python -m unittest discover -s tests -t . -v
+   LIVE=1 .venv/bin/python -m unittest tests.integration.test_api_live -v
+   scripts/check_offline.sh
+   ```
+
+   Unit tests never call models. Live tests call the running backend and real models, and append audit records; they do not start/stop services. `check_inference.sh` prints served model roots and one measured Lightning completion with thinking disabled. `check_offline.sh` reports routes and public HTTPS reachability on both hosts, then calls each local model. It never changes networking. Both scripts use `.venv/bin/python` by default (`PYTHON` can override it).
+
+The user switcher sends `X-Demo-User`; this is **demo identity, not production authentication**. Users come from [data/demo/users.json](data/demo/users.json):
+
+| Username | Display name | Role | Projects |
+|---|---|---|---|
+| aisyah | Aisyah Rahman (Business Analyst) | analyst | PRJ-SPL |
+| daniel | Daniel Tan (Project Manager) | pm | PRJ-SPL, PRJ-KLN |
+| haziq | Muhammad Haziq (Mobile Developer) | employee | PRJ-SPL |
+| farah | Farah Aziz (New Joiner) | employee | none |
+| suresh | Suresh Kumar (Finance) | finance | all |
+| hana | Hana Lee (HR) | hr | none |
+| siti | Siti Hajar (Executive) | exec | all |
+
+## Status
+
+Evidence from this verification pass on 2026-10-17; a live API test is not a browser demonstration. “Implemented” below is limited to behavior exercised by these tests.
+
+| Workflow | Implemented | Tested (unit) | Demonstrated live |
+|---|---|---|---|
+| Requirements v1 → approval → v2 → approval | pending verification | pending verification | pending verification |
+| Onboarding | Implemented: leave answer API | Tested: section parsing and role filtering; citation rejection/escalation skipped (no pure helper) | Live API: answered with leave citations; UI pending verification |
+| Expense claims | Implemented: deterministic policy checks only | Tested: limits, PM pre-approval flag, currency, future date, path traversal | pending verification |
+| Executive variance | Implemented: September variance API | Tested: RM 9,400 / 18.1% labour overrun; invented RM 200,000 flagged | Live API: Siti 200, `unverified_numbers == []`; UI pending verification |
+| Role permissions | Implemented: tested denials | Tested: analyst cannot approve; HR cannot view executive data | Live API: Haziq/Hana executive 403; Aisyah approval 403 |
+| Audit | Implemented: isolated hash-chain storage | Tested: chaining, ordering, altered/deleted entries, full-chain verification with a result limit | pending verification |
+| Local inference | Implemented: served endpoints answer | pending verification | Three model roots listed; real text answers from Lightning, Omni, Nano |
+| HR capacity, invoice/PO drafting, device/security operations | pending verification | pending verification | pending verification |
+| Operation without public internet | pending verification | pending verification | pending verification |
+
+Exact results: unit-only discovery ran **17 tests: 15 passed, 0 failed, 2 skipped**. Default discovery (`-s tests -t .`) ran **23 tests: 15 passed, 0 failed, 8 skipped** (6 opt-in live checks plus the 2 unit skips). `LIVE=1` integration discovery ran **6 tests: 6 passed, 0 failed, 0 skipped**. There were no test errors. Citation filtering and forced escalation live inside `ask()` after inference, so the unit suite explicitly skips those two checks rather than mocking a model answer.
+
+The reporting scripts completed successfully. Lightning's one-call measurement was **0.131293 s** (a warm text call, not a throughput benchmark). All three local models answered. Both machines could reach `https://huggingface.co`, and both had an IPv4 default gateway of `172.20.10.1` (the Mac route needed a read outside the sandbox). This run does **not** establish offline operation. See [the rehearsal checklist](docs/DEMO.md) before making that claim.
 
 ## Documentation
 
