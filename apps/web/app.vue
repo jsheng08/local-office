@@ -24,7 +24,8 @@ const okModels = computed(() => (health.value?.models || []).filter((m: any) => 
 const fallbackOn = computed(() => !!health.value?.hosted_fallback)
 
 const tabs = [
-  { to: '/', label: 'Client Brief' },
+  { to: '/', label: 'Office' },
+  { to: '/brief', label: 'Client Brief' },
   { to: '/executive', label: 'Executive' },
   { to: '/audit', label: 'Audit' },
 ]

@@ -1,236 +1,156 @@
 <script setup lang="ts">
-const PID = 'PRJ-SPL'
-const api = useApi()
+const o = useOffice()
 const user = useCurrentUser()
-const { busy, elapsed, run } = useBusy()
-
-// Persist across tab switches.
-const paragraphs = useState<any[]>('req_paras', () => [])
-const analysis = useState<any>('req_analysis', () => null)
-const changes = useState<any>('req_changes', () => null)
-const decision = useState<any>('req_decision', () => null)
-const err = ref<any>(null)
-const decErr = ref<any>(null)
-const hl = ref<{ pid: string; quote: string } | null>(null)
-
-async function analyze(kind: 'analyze' | 'reanalyze') {
-  err.value = null; decErr.value = null
-  lastKind.value = kind
-  const demo_file = kind === 'analyze' ? 'requirements_v1.md' : 'requirements_v2.md'
-  try {
-    const d: any = await run(() => api(`/api/projects/${PID}/requirements/${kind}`, { method: 'POST', body: { demo_file } }))
-    if (d.paragraphs?.length) paragraphs.value = d.paragraphs
-    analysis.value = d
-    changes.value = kind === 'reanalyze' ? d : null
-    decision.value = null
-  } catch (e) { err.value = e }
+const api = useApi()
+const q = ref('')
+const asking = ref(false)
+const askRes = ref<any>(null)
+const askErr = ref<any>(null)
+const SUGGEST = ['What is everyone working on?', 'Who is on leave and what is blocked?', 'What changed in brief v2?']
+async function ask(text?: string) {
+  if (text) q.value = text
+  if (!q.value.trim()) return
+  asking.value = true; askErr.value = null; askRes.value = null
+  try { askRes.value = await api('/api/knowledge/ask', { method: 'POST', body: { question: q.value } }) }
+  catch (e) { askErr.value = e } finally { asking.value = false }
 }
+const boardOpen = ref(false)
+const docOpen = ref(false)
+const focusStaff = ref<string | null>(null)
 
-async function decide(dec: 'approve' | 'reject') {
-  decErr.value = null
-  try {
-    const d: any = await run(() => api(`/api/change_sets/${analysis.value.change_set_id}/decision`, { method: 'POST', body: { decision: dec } }))
-    decision.value = { ...d, by: user.value }
-  } catch (e) { decErr.value = e }
-}
+onMounted(() => { o.loadStaff(); o.loadBoard() })
+watch(user, () => o.loadStaff())
 
-const diffMap = computed(() => {
-  const m: Record<string, string> = {}
-  for (const x of changes.value?.paragraph_diff || []) m[x.id] = x.change
-  return m
-})
+function openBoard(staffId: string | null = null) { focusStaff.value = staffId; boardOpen.value = true }
+async function decide(d: 'approve' | 'reject') {
+  await o.decide(d)
+  if (!o.err.value) { docOpen.value = false; boardOpen.value = false }
+}
+function approveAsPM() { user.value = 'daniel'; o.err.value = null; docOpen.value = true }
 
-function cite(pid: string, quote: string) {
-  hl.value = { pid, quote: quote || '' }
-  nextTick(() => document.getElementById('para-' + pid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
-}
-function parts(p: any) {
-  if (!hl.value || hl.value.pid !== p.id || !hl.value.quote) return [p.text, '', '']
-  const t: string = p.text
-  let i = t.indexOf(hl.value.quote)
-  if (i < 0) i = t.toLowerCase().indexOf(hl.value.quote.toLowerCase())
-  if (i < 0) return [t, '', '']
-  const n = hl.value.quote.length
-  return [t.slice(0, i), t.slice(i, i + n), t.slice(i + n)]
-}
-const conf = (c: any) => c == null ? '—' : typeof c === 'number' && c <= 1 ? Math.round(c * 100) + '%' : c
-const staffNames = (s: any) => s?.recommended_staff?.length ? s.recommended_staff.join(', ') : '—'
-const PRIO: Record<string, string> = { must: 'Must-have', should: 'Should-have', could: 'Nice-to-have', wont: 'Later' }
-const prioLabel = (p: any) => p == null ? '—' : (PRIO[p] || String(p))
-const cols = [
-  { k: 'must', n: 'Must-have' }, { k: 'should', n: 'Should-have' }, { k: 'could', n: 'Nice-to-have' }, { k: 'wont', n: 'Later' },
+const STEPS = [
+  { k: 'receiving', n: 'Mailroom: document read on this ATOM' },
+  { k: 'reading', n: 'Local Nemotron extracts requirements, quotes checked' },
+  { k: 'quarantine', n: 'Hidden instructions quarantined' },
+  { k: 'filing', n: 'Proposed cards pinned to the board' },
+  { k: 'awaiting', n: 'PM approval required' },
 ]
-const lastKind = ref<'analyze' | 'reanalyze'>('analyze')
-const STAGES_BASE = [
-  'Reading the brief on-device',
-  'Extracting requirements with local Nemotron',
-  'Verifying every quote against the source',
-  'Estimating effort',
-  'Ranking staff from the local roster',
-]
-const stages = computed(() => lastKind.value === 'reanalyze' ? [...STAGES_BASE, 'Comparing v1 and v2'] : STAGES_BASE)
-
-// Cost of change — computed only from the real `changes` array in the v2 response.
-const changedRows = computed(() => (changes.value?.changes || []).filter((c: any) => c.change !== 'unchanged'))
-const costOfChange = computed(() => {
-  const cs: any[] = changes.value?.changes || []
-  if (!cs.length) return null
-  let hours = 0, added = 0, modified = 0, removed = 0, missing = 0
-  const num = (v: any) => (v == null || isNaN(Number(v)) ? null : Number(v))
-  for (const c of cs) {
-    if (c.change === 'added') { added++; const a = num(c.after?.pert); a == null ? missing++ : (hours += a) }
-    else if (c.change === 'modified') { modified++; const a = num(c.after?.pert), b = num(c.before?.pert); a == null || b == null ? missing++ : (hours += a - b) }
-    else if (c.change === 'removed') { removed++; const b = num(c.before?.pert); b == null ? missing++ : (hours -= b) }
-  }
-  return { hours, added, modified, removed, missing }
-})
-const signed = (n: number) => (n >= 0 ? '+' : '−') + fmtNum(Math.abs(n), 0)
-const hrs = (s: any) => s ? `${fmtNum(s.low)}–${fmtNum(s.high)} h` : null
+const ORDER = ['idle', 'receiving', 'reading', 'quarantine', 'filing', 'awaiting', 'applied']
+const stepCls = (k: string) => {
+  const cur = ORDER.indexOf(o.phase.value), me = ORDER.indexOf(k)
+  if (o.phase.value === 'applied' || cur > me) return 'done'
+  return cur === me ? 'on' : ''
+}
+const title = computed(() => ({
+  idle: o.cards.value.length ? 'Board is up to date' : 'Waiting for a client document',
+  receiving: 'Document received', reading: 'Triage in progress', quarantine: 'Attack blocked',
+  filing: 'Updating the board', awaiting: 'Waiting on a human', applied: 'Approved and applied', error: 'Something failed',
+} as Record<string, string>)[o.phase.value])
+const onLeave = computed(() => o.staff.value.filter(s => s.on_leave))
 function actAs(u: string) { user.value = u }
 </script>
 
 <template>
-  <section>
-    <div class="toolbar card">
-      <div class="proj"><span class="lbl">Project</span> <b>PRJ-SPL</b></div>
-      <button class="btn primary big" :disabled="busy" @click="analyze('analyze')">Analyze brief v1</button>
-      <button class="btn big" :disabled="busy" @click="analyze('reanalyze')">Upload changed brief v2</button>
-      <div class="grow" />
-      <div class="actas">
-        <button class="btn big" :class="{ on: user === 'aisyah' }" @click="actAs('aisyah')">Act as Analyst (Aisyah)</button>
-        <button class="btn big" :class="{ on: user === 'daniel' }" @click="actAs('daniel')">Act as PM (Daniel)</button>
-      </div>
-    </div>
-    <div v-if="busy || elapsed > 0" class="card narr"><Spinner :busy="busy" :elapsed="elapsed" :stages="stages" /></div>
-    <ErrBox :err="err" />
+  <section class="office">
+    <div class="floorwrap">
+      <OfficeFloor
+        :staff="o.staff.value" :tasks-by-staff="o.tasksByStaff.value" :phase="o.phase.value"
+        :helper-say="o.helperSay.value" :board-counts="o.boardCounts.value" :has-proposed="o.hasProposed.value"
+        :quarantine-count="o.quarantine.value.length" :busy="o.busy.value" :cards="o.cards.value"
+        @drop="o.upload" @open-board="openBoard()" @select-staff="(id: string) => openBoard(id)"
+        @open-records="navigateTo('/audit')" @select-card="openBoard()" />
 
-    <!-- Attack blocked -->
-    <div v-if="analysis && (analysis.ignored_instructions || []).length" class="card attack">
-      <h2>⛔ Attack blocked: hidden instruction in the client's file was ignored</h2>
-      <div v-for="(a, i) in analysis.ignored_instructions" :key="i" class="ign">
-        <button class="cite ref big" @click="cite(a.paragraph_id, a.quote)">{{ a.paragraph_id }}</button>
-        <div class="aquote">“{{ a.quote }}”</div>
-      </div>
-      <div class="sub">The brief is treated as untrusted data — this text was reported, not executed.</div>
-    </div>
-    <div v-else-if="analysis" class="card"><span class="muted">No embedded instructions detected in this document.</span></div>
-
-    <!-- Before / After -->
-    <div v-if="changes" class="card">
-      <div v-if="costOfChange" class="coc">
-        Client change v2 → <b :class="costOfChange.hours > 0 ? 'up' : 'down'">{{ signed(costOfChange.hours) }} est. hours</b>
-        · {{ costOfChange.added }} added · {{ costOfChange.modified }} changed · {{ costOfChange.removed }} removed
-      </div>
-      <div v-if="costOfChange?.missing" class="sub">{{ costOfChange.missing }} change(s) had no estimate and are excluded from the total.</div>
-      <h2>Before → After <span class="sub">proposed re-prioritisation · nothing applied until a PM approves</span></h2>
-      <div class="tablewrap">
-        <table class="tbl big">
-          <thead><tr><th>Req</th><th>Change</th><th>Priority</th><th>Est. hours (low–high)</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr v-for="c in changedRows" :key="c.req_id" :class="'ch-' + c.change">
-              <td><code>{{ c.req_id }}</code><div class="ttl">{{ c.title }}</div></td>
-              <td><span class="cpill" :class="'c-' + c.change">{{ c.change }}</span></td>
-              <td><Arrow :a="c.before ? prioLabel(c.before.priority) : null" :b="c.after ? prioLabel(c.after.priority) : null" /></td>
-              <td><Arrow :a="hrs(c.before)" :b="hrs(c.after)" /></td>
-              <td class="reason">{{ c.reason }}</td>
-            </tr>
-            <tr v-if="!changedRows.length"><td colspan="5" class="muted">No changed requirements returned.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Approval bar -->
-    <div v-if="analysis?.change_set_id" class="approval">
-      <div><span class="muted">Change set</span> <code>{{ analysis.change_set_id }}</code></div>
-      <div v-if="!decision" class="pill amber big0">Pending human approval</div>
-      <div v-else-if="decision.status === 'applied'" class="pill green big0">Applied by {{ decision.by }}</div>
-      <div v-else class="pill red big0">{{ decision.status }} by {{ decision.by }}</div>
-      <div class="grow" />
-      <button class="btn approve big" :disabled="busy || !!decision" @click="decide('approve')">Approve</button>
-      <button class="btn reject big" :disabled="busy || !!decision" @click="decide('reject')">Reject</button>
-    </div>
-    <ErrBox :err="decErr" hint="Only a project manager can approve — click “Act as PM (Daniel)”." />
-
-    <!-- Kanban -->
-    <div v-if="decision?.board" class="card">
-      <h2>Approved Kanban board <span class="sub">PRJ-SPL · {{ decision.status }} by {{ decision.by }}</span></h2>
-      <div class="board">
-        <div v-for="c in cols" :key="c.k" class="col" :class="'col-' + c.k">
-          <div class="colhead">{{ c.n }} <span class="cnt">{{ decision.board.filter((r: any) => r.priority === c.k).length }}</span></div>
-          <div v-for="r in decision.board.filter((r: any) => r.priority === c.k)" :key="r.id" class="kcard">
-            <code>{{ r.id }}</code>
-            <div class="kt">{{ r.title }}</div>
-            <div class="km">
-              <span v-if="r.triage?.pert != null">Est. {{ fmtNum(r.triage.pert) }} h</span>
-              <span v-if="r.recommended_staff?.length"> · {{ r.recommended_staff.map((s: any) => s.name).join(', ') }}</span>
-            </div>
-          </div>
+      <aside class="hud">
+        <div class="k"><span class="dot" :class="o.phase.value" /> Office helper · local Nemotron</div>
+        <h2>{{ title }}</h2>
+        <p v-if="o.lastDoc.value?.filename" class="doc">
+          📄 {{ o.lastDoc.value.filename }}
+          <span v-if="o.lastDoc.value.method" class="muted">· {{ o.lastDoc.value.method }}<template v-if="o.lastDoc.value.chars"> · {{ fmtNum(o.lastDoc.value.chars, 0) }} chars</template></span>
+        </p>
+        <ol class="steps">
+          <li v-for="s in STEPS" :key="s.k" :class="stepCls(s.k)">{{ s.n }}</li>
+        </ol>
+        <div v-if="o.busy.value" class="muted">{{ fmtNum(o.elapsed.value, 0) }} s · real call in progress</div>
+        <div v-for="(a, i) in o.quarantine.value" :key="i" class="alert">
+          <b>⛔ Quarantined {{ a.paragraph_id }}:</b> “{{ a.quote }}” was reported, not obeyed.
         </div>
-      </div>
+        <div v-if="o.note.value" class="muted">{{ o.note.value }}</div>
+        <div class="btns">
+          <button class="btn" :class="{ on: user === 'aisyah' }" @click="actAs('aisyah')">Act as Analyst</button>
+          <button class="btn" :class="{ on: user === 'daniel' }" @click="actAs('daniel')">Act as PM</button>
+          <button class="btn primary" :disabled="!o.cards.value.length" @click="openBoard()">Open board</button>
+        </div>
+        <div v-if="o.hasProposed.value" class="btns">
+          <button class="btn approve big" :disabled="o.busy.value" @click="approveAsPM">Approve as PM</button>
+          <button class="btn" :disabled="o.busy.value" @click="actAs('aisyah'); decide('approve')">Try approving as Analyst</button>
+        </div>
+        <div class="btns">
+          <button class="btn" :disabled="o.busy.value" @click="o.resetData()">↺ Reset data (v1 approved)</button>
+        </div>
+        <div v-if="o.baseline.value" class="muted">Baseline: real local run {{ o.baseline.value.run_id }} · {{ o.baseline.value.analyzed_at }}</div>
+        <ErrBox :err="o.err.value" hint="Only a project manager can approve. Click “Act as PM”." />
+        <div v-if="onLeave.length" class="leave">🌴 On leave today: {{ onLeave.map(s => s.name.split(' ')[0]).join(', ') }}</div>
+      </aside>
     </div>
 
-    <!-- Analysis -->
-    <div v-if="analysis" class="grid2">
-      <div class="card src">
-        <h2>Confidential client brief — processed on this ATOM, never uploaded</h2>
-        <div class="sub" style="margin-bottom:.6rem">Untrusted input · click a citation to locate</div>
-        <div v-for="p in paragraphs" :id="'para-' + p.id" :key="p.id" class="para"
-             :class="[{ hl: hl?.pid === p.id }, diffMap[p.id] && diffMap[p.id] !== 'equal' ? 'diff-' + diffMap[p.id] : '']">
-          <span class="pid">{{ p.id }}</span>
-          <span v-if="diffMap[p.id] && diffMap[p.id] !== 'equal'" class="dtag">{{ diffMap[p.id] }}</span>
-          <div class="ptext">{{ parts(p)[0] }}<mark v-if="parts(p)[1]">{{ parts(p)[1] }}</mark>{{ parts(p)[2] }}</div>
-        </div>
+    <div class="askcard card">
+      <h2>Ask the office <span class="sub">instead of a daily stand-up · answered by local Nemotron from the office notes</span></h2>
+      <form class="askrow" @submit.prevent="ask()">
+        <input v-model="q" placeholder="Who is working on what? What is blocked? Who is away?" :disabled="asking">
+        <button class="btn primary" :disabled="asking || !q.trim()">{{ asking ? 'Thinking…' : 'Ask' }}</button>
+      </form>
+      <div class="chips"><button v-for="s in SUGGEST" :key="s" class="chip" :disabled="asking" @click="ask(s)">{{ s }}</button></div>
+      <div v-if="askRes" class="answer">
+        <p :class="{ muted: askRes.status !== 'answered' }">{{ askRes.answer }}</p>
+        <div class="cites"><span v-for="c in askRes.citations" :key="c.id" class="cite">{{ c.folder === 'live' ? '⚡' : '📓' }} {{ c.id }}</span></div>
+        <div class="muted small">{{ askRes.notes_visible }} notes you can access · {{ askRes.meta?.calls?.[0]?.model }} · {{ fmtNum(askRes.meta?.total_latency_ms, 0) }} ms</div>
       </div>
-      <div>
-        <div class="card">
-          <h2>Proposed requirements <span class="sub">{{ analysis.requirements?.length || 0 }} proposed · not applied until approved</span></h2>
-          <article v-for="r in analysis.requirements || []" :key="r.id" class="req">
-            <div class="reqhead">
-              <code>{{ r.id }}</code>
-              <span class="prio" :class="'p-' + r.priority">{{ prioLabel(r.priority) }}</span>
-              <h3>{{ r.title }}</h3>
-            </div>
-            <div class="cites">
-              <button v-for="(c, i) in r.citations || []" :key="i" class="cite" :class="c.status" :title="c.quote" @click="cite(c.paragraph_id, c.quote)">
-                {{ c.paragraph_id }} · {{ c.status }}
-              </button>
-            </div>
-            <details class="more">
-              <summary>Story, acceptance criteria, estimate &amp; staff</summary>
-              <p v-if="r.story?.as_a" class="story">As a <b>{{ r.story.as_a }}</b>, I want <b>{{ r.story.i_want }}</b>, so that {{ r.story.so_that }}.</p>
-              <p v-else-if="r.statement" class="story">{{ r.statement }}</p>
-              <div v-if="r.acceptance_criteria?.length" class="ac">
-                <div class="lbl">Acceptance criteria</div>
-                <ul><li v-for="(a, i) in r.acceptance_criteria" :key="i">{{ a }}</li></ul>
-              </div>
-              <div class="metrics">
-                <div><span class="lbl">Est. hours</span> <b>{{ fmtNum(r.triage?.low) }}–{{ fmtNum(r.triage?.high) }} h</b> (expected {{ fmtNum(r.triage?.pert) }})</div>
-                <div><span class="lbl">Confidence</span> <b>{{ conf(r.triage?.confidence) }}</b></div>
-                <div v-if="r.triage?.depends_on?.length"><span class="lbl">Depends on</span> <code v-for="d in r.triage.depends_on" :key="d">{{ d }} </code></div>
-              </div>
-              <div v-if="r.recommended_staff?.length" class="staff">
-                <div class="lbl">Recommended staff · requires human approval</div>
-                <ul>
-                  <li v-for="s in r.recommended_staff" :key="s.staff_id"><b>{{ s.name }}</b> <span class="muted">{{ s.staff_id }}<template v-if="s.score != null"> · score {{ fmtNum(s.score, 2) }}</template></span>
-                    <div class="reason">{{ s.reason }}</div></li>
-                </ul>
-              </div>
-            </details>
-          </article>
-        </div>
-        <div v-if="analysis.ambiguities" class="card">
-          <h2>Ambiguities <span class="sub">questions for the client</span></h2>
-          <ol v-if="analysis.ambiguities.length" class="qlist">
-            <li v-for="a in analysis.ambiguities" :key="a.id">
-              <b>{{ a.question }}</b>
-              <button v-if="a.paragraph_id" class="cite ref" @click="cite(a.paragraph_id, a.quote)">{{ a.paragraph_id }}</button>
-              <div v-if="a.quote" class="quote">“{{ a.quote }}”</div>
-            </li>
-          </ol>
-          <div v-else class="muted">None returned.</div>
-        </div>
-      </div>
+      <ErrBox :err="askErr" />
     </div>
+
+    <OfficeBoardModal
+      :open="boardOpen" :cards="o.cards.value" :staff="o.staff.value" :change-set-id="o.changeSetId.value"
+      :decision-status="o.decisionStatus.value" :busy="o.busy.value" :focus-staff-id="focusStaff"
+      :initial-view="focusStaff ? 'person' : 'priority'"
+      @close="boardOpen = false" @approve="approveAsPM" @reject="decide('reject')" />
+
+    <OfficeChangeRequestDoc
+      :open="docOpen" :analysis="o.analysis.value" :cards="o.cards.value" :staff="o.staff.value"
+      :doc-name="o.lastDoc.value?.filename || null" :user="user" :busy="o.busy.value" :error="o.err.value"
+      @close="docOpen = false" @approve="decide('approve')" @reject="decide('reject')" />
   </section>
 </template>
+
+<style scoped>
+.floorwrap { position: relative; border-radius: 18px; overflow: hidden; background: linear-gradient(#f7f2e9, #ebe1cf); }
+.hud { position: absolute; left: 18px; bottom: 18px; width: 380px; max-width: calc(100% - 36px);
+  background: rgba(16, 32, 31, .96); color: #e8f3ee; border-radius: 16px; padding: 16px 18px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .35); font-size: .8rem; }
+.hud h2 { font-size: 1.15rem; margin: .3rem 0 .5rem; }
+.k { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; opacity: .7; display: flex; gap: .5rem; align-items: center; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #5b6b68; }
+.dot.receiving, .dot.reading, .dot.filing, .dot.awaiting { background: #f5a524; box-shadow: 0 0 0 4px rgba(245, 165, 36, .2); }
+.dot.applied { background: #76b900; box-shadow: 0 0 0 4px rgba(118, 185, 0, .25); }
+.dot.quarantine, .dot.error { background: #e5484d; box-shadow: 0 0 0 4px rgba(229, 72, 77, .25); }
+.doc { margin: 0 0 .4rem; }
+.steps { list-style: none; padding: 0; margin: 0 0 .6rem; }
+.steps li { padding: 2px 0; opacity: .4; }
+.steps li::before { content: "○ "; }
+.steps li.on { opacity: 1; } .steps li.on::before { content: "◐ "; color: #f5a524; }
+.steps li.done { opacity: .8; } .steps li.done::before { content: "● "; color: #76b900; }
+.alert { background: #3a1416; border: 1px solid #7a2a2e; border-radius: 10px; padding: 6px 9px; margin: .4rem 0; }
+.btns { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.btns .btn { font-size: .75rem; padding: .35rem .7rem; }
+.leave { margin-top: .6rem; opacity: .85; }
+.askcard { margin-top: 16px; }
+.askrow { display: flex; gap: .5rem; }
+.askrow input { flex: 1; font: inherit; padding: .55rem .8rem; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+.chip { font: inherit; font-size: .75rem; border-radius: 999px; padding: .25rem .7rem; background: var(--panel2); color: var(--text); border: 1px solid var(--line); cursor: pointer; }
+.answer { margin-top: .7rem; }
+.answer p { margin: 0 0 .4rem; white-space: pre-line; }
+.cites { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .3rem; }
+.cite { font-size: .72rem; background: #1f3317; color: #cfe8a8; border-radius: 6px; padding: .1rem .5rem; }
+.small { font-size: .72rem; }
+@media (max-width: 900px) { .hud { position: static; width: auto; max-width: none; margin: 12px; } }
+</style>

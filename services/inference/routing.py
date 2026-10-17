@@ -21,10 +21,12 @@ MODELS: Dict[str, dict] = {
 }
 
 ROUTES: Dict[str, str] = {
+    "document_ocr": "omni",
     "requirements_extract": "lightning",
     "triage": "lightning",
     "executive_explain": "lightning",
     "onboarding_qa": "nano",
+    "knowledge_qa": "lightning",
 }
 
 

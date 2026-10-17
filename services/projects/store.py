@@ -115,3 +115,18 @@ def kanban_item(r: Dict) -> Dict:
             "estimate_h": t.get("pert"), "assignee": None,  # staff assignment is a separate human decision
             "suggested_staff": [s.get("staff_id") for s in r.get("recommended_staff", [])],
             "source_ref": "brief " + cites if cites else None, "approved": True, "from_analysis": True}
+
+
+def reset_to_baseline(run: Dict, change_set: Dict, approver: str) -> List[Dict]:
+    """Replace runtime state with a recorded, approved baseline (demo reset)."""
+    with _LOCK:
+        cs = copy.deepcopy(change_set)
+        cs["status"] = "applied"
+        cs["decided_by"] = approver
+        cs["decided_at"] = time.time()
+        cs["note"] = "baseline restored by demo reset"
+        pid = cs["project_id"]
+        board = [r for r in cs["requirements"] if r.get("approvable", True)]
+        _save({"runs": {run["id"]: copy.deepcopy(run)}, "change_sets": {cs["id"]: cs},
+               "boards": {pid: board}, "last_run": {pid: run["id"]}})
+        return copy.deepcopy(board)

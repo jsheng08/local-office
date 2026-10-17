@@ -12,12 +12,12 @@ ROOT = Path(__file__).resolve().parents[2]
 USERS_PATH = ROOT / "data" / "demo" / "users.json"
 
 ROLE_PERMS: Dict[str, set] = {
-    "analyst": {"project:view", "req:analyze", "onboarding:ask"},
-    "pm": {"project:view", "req:analyze", "proposal:approve", "onboarding:ask", "audit:view"},
-    "employee": {"project:view", "onboarding:ask"},
-    "finance": {"onboarding:ask", "exec:view", "audit:view"},
-    "hr": {"onboarding:ask", "staff:view"},
-    "exec": {"project:view", "exec:view", "onboarding:ask", "audit:view"},
+    "analyst": {"project:view", "req:analyze", "demo:reset", "staff:directory", "onboarding:ask"},
+    "pm": {"project:view", "req:analyze", "demo:reset", "proposal:approve", "staff:directory", "onboarding:ask", "audit:view"},
+    "employee": {"project:view", "staff:directory", "onboarding:ask"},
+    "finance": {"staff:directory", "onboarding:ask", "exec:view", "audit:view"},
+    "hr": {"staff:directory", "onboarding:ask", "staff:view"},
+    "exec": {"project:view", "exec:view", "staff:directory", "onboarding:ask", "audit:view"},
 }
 
 _lock = threading.Lock()

@@ -4,8 +4,22 @@
     {
       "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "apps/web", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "apps/web",
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "mockup",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "const h=require('http'),f=require('fs'),p=require('path');const R=p.resolve('docs/mockups');h.createServer((q,s)=>{let u=decodeURIComponent(q.url.split('?')[0]);if(u==='/')u='/office.html';const fp=p.join(R,p.normalize(u));if(!fp.startsWith(R)){s.writeHead(403);return s.end()}f.readFile(fp,(e,b)=>{if(e){s.writeHead(404);return s.end('not found')}s.writeHead(200,{'content-type':fp.endsWith('.html')?'text/html; charset=utf-8':'application/octet-stream'});s.end(b)})}).listen(+process.env.PORT||4100,'127.0.0.1',()=>console.log('mockup on 4100'))"
+      ],
+      "port": 4100
     }
   ]
 }

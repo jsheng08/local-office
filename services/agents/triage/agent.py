@@ -1,5 +1,7 @@
 """Triage agent: local Nemotron effort estimate + deterministic PERT and staff ranking."""
 import json
+import os
+from datetime import date
 from pathlib import Path
 from typing import List, Dict, Tuple
 
@@ -37,6 +39,14 @@ def load_staff() -> List[Dict]:
         return json.load(f)
 
 
+def active_leave(today=None):
+    """Inclusive leave windows; LO_TODAY makes the synthetic demo reproducible."""
+    today = today or date.fromisoformat(os.environ.get("LO_TODAY") or date.today().isoformat())
+    rows = json.loads((ROOT / "data" / "demo" / "leave.json").read_text(encoding="utf-8"))
+    return {row["staff_id"]: {k: row[k] for k in ("type", "from", "to")}
+            for row in rows if date.fromisoformat(row["from"]) <= today <= date.fromisoformat(row["to"])}
+
+
 def skill_vocab(staff: List[Dict]) -> List[str]:
     seen = {}
     for s in staff:
@@ -55,7 +65,10 @@ def rank_staff(required: List[str], likely: float, staff: List[Dict], top: int =
         return []
     need_per_week = max(1.0, likely / 4.0)
     scored = []
+    leave = active_leave()
     for s in staff:
+        if s.get("id") in leave:
+            continue
         avail = float(s.get("weekly_capacity_h", 0)) - float(s.get("allocated_h", 0))
         if avail < 4:
             continue
