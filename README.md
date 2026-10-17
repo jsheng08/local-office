@@ -1,14 +1,14 @@
-# Closed Office
+# Local Office
 
 **One ATOM. One Private AI. Your Entire Office.**
 
-Closed Office is a proposed private AI operating layer for consulting firms and software houses. It aims to turn confidential client requirements into actionable project work and support employees across onboarding, project management, finance, HR, and executive operations.
+Local Office is a proposed private AI operating layer for consulting firms and software houses. It aims to turn confidential client requirements into actionable project work and support employees across onboarding, project management, finance, HR, and executive operations.
 
 > **Project status:** This repository currently contains project guidance and a proposed structure. Application services and workflows have not yet been implemented. The architecture below is a target, not a claim about working software.
 
 ## Why local AI
 
-Closed Office is designed to run NVIDIA Nemotron inference on the GIGABYTE AI TOP ATOM (DGX Spark platform, 128 GB unified memory). Keeping inference on organization-operated hardware can help keep sensitive HR, finance, client, project, and security data within the organization's controlled environment. The core workflows should remain available without public internet when their local dependencies are available.
+Local Office is designed to run NVIDIA Nemotron inference on the GIGABYTE AI TOP ATOM (DGX Spark platform, 128 GB unified memory). Keeping inference on organization-operated hardware can help keep sensitive HR, finance, client, project, and security data within the organization's controlled environment. The core workflows should remain available without public internet when their local dependencies are available.
 
 There is no hosted LLM fallback. Hardware, model, and runtime compatibility must be verified before claiming a workflow runs locally. Local deployment does not by itself provide security; access controls, storage protections, auditing, and operational controls remain necessary.
 

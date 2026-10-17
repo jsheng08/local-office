@@ -1,8 +1,8 @@
-# CLAUDE.md — Closed Office
+# CLAUDE.md — Local Office
 
 ## Project identity
 
-- Project: Closed Office
+- Project: Local Office
 - Event context: ACE Malaysia 2026 hackathon
 - Target hardware: GIGABYTE AI TOP ATOM (DGX Spark platform), 128 GB unified memory
 - Required model family: NVIDIA Nemotron, running locally
