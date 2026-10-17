@@ -1,0 +1,62 @@
+[
+  {
+    "username": "aisyah",
+    "display_name": "Aisyah Rahman (Business Analyst)",
+    "staff_id": "S01",
+    "role": "analyst",
+    "projects": [
+      "PRJ-SPL"
+    ]
+  },
+  {
+    "username": "daniel",
+    "display_name": "Daniel Tan (Project Manager)",
+    "staff_id": "S02",
+    "role": "pm",
+    "projects": [
+      "PRJ-SPL",
+      "PRJ-KLN"
+    ]
+  },
+  {
+    "username": "haziq",
+    "display_name": "Muhammad Haziq (Mobile Developer)",
+    "staff_id": "S04",
+    "role": "employee",
+    "projects": [
+      "PRJ-SPL"
+    ]
+  },
+  {
+    "username": "farah",
+    "display_name": "Farah Aziz (New Joiner)",
+    "staff_id": null,
+    "role": "employee",
+    "projects": []
+  },
+  {
+    "username": "suresh",
+    "display_name": "Suresh Kumar (Finance)",
+    "staff_id": null,
+    "role": "finance",
+    "projects": [
+      "*"
+    ]
+  },
+  {
+    "username": "hana",
+    "display_name": "Hana Lee (HR)",
+    "staff_id": null,
+    "role": "hr",
+    "projects": []
+  },
+  {
+    "username": "siti",
+    "display_name": "Siti Hajar (Executive)",
+    "staff_id": null,
+    "role": "exec",
+    "projects": [
+      "*"
+    ]
+  }
+]

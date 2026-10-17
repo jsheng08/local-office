@@ -1,0 +1,132 @@
+[
+  {
+    "id": "S01",
+    "name": "Aisyah Rahman",
+    "role": "Business Analyst",
+    "skills": [
+      "requirements",
+      "BM",
+      "logistics"
+    ],
+    "weekly_capacity_h": 40,
+    "allocated_h": 24,
+    "projects": [
+      "PRJ-SPL"
+    ],
+    "hourly_cost_myr": 90
+  },
+  {
+    "id": "S02",
+    "name": "Daniel Tan Wei Ming",
+    "role": "Project Manager",
+    "skills": [
+      "agile",
+      "stakeholder management"
+    ],
+    "weekly_capacity_h": 40,
+    "allocated_h": 30,
+    "projects": [
+      "PRJ-SPL",
+      "PRJ-KLN"
+    ],
+    "hourly_cost_myr": 120
+  },
+  {
+    "id": "S03",
+    "name": "Priya Nair",
+    "role": "Senior Backend Engineer",
+    "skills": [
+      "python",
+      "postgres",
+      "ERP integration",
+      "security"
+    ],
+    "weekly_capacity_h": 40,
+    "allocated_h": 36,
+    "projects": [
+      "PRJ-SPL"
+    ],
+    "hourly_cost_myr": 130
+  },
+  {
+    "id": "S04",
+    "name": "Muhammad Haziq",
+    "role": "Mobile Developer",
+    "skills": [
+      "flutter",
+      "offline sync",
+      "maps",
+      "mobile"
+    ],
+    "weekly_capacity_h": 40,
+    "allocated_h": 20,
+    "projects": [
+      "PRJ-SPL"
+    ],
+    "hourly_cost_myr": 95
+  },
+  {
+    "id": "S05",
+    "name": "Lim Mei Ling",
+    "role": "Frontend Developer",
+    "skills": [
+      "react",
+      "dashboards",
+      "maps"
+    ],
+    "weekly_capacity_h": 40,
+    "allocated_h": 38,
+    "projects": [
+      "PRJ-KLN"
+    ],
+    "hourly_cost_myr": 100
+  },
+  {
+    "id": "S06",
+    "name": "Arjun Pillai",
+    "role": "DevSecOps Engineer",
+    "skills": [
+      "PDPA",
+      "encryption",
+      "security",
+      "CI/CD"
+    ],
+    "weekly_capacity_h": 32,
+    "allocated_h": 12,
+    "projects": [],
+    "hourly_cost_myr": 140
+  },
+  {
+    "id": "S07",
+    "name": "Nurul Izzah",
+    "role": "QA Engineer",
+    "skills": [
+      "test automation",
+      "UAT"
+    ],
+    "weekly_capacity_h": 40,
+    "allocated_h": 28,
+    "projects": [
+      "PRJ-SPL",
+      "PRJ-KLN"
+    ],
+    "hourly_cost_myr": 70
+  },
+  {
+    "id": "S08",
+    "name": "Wong Kah Seng",
+    "role": "Integration Engineer",
+    "skills": [
+      "e-invoicing",
+      "MyInvois API",
+      "REST",
+      "ERP integration"
+    ],
+    "weekly_capacity_h": 40,
+    "allocated_h": 16,
+    "projects": [
+      "PRJ-KLN"
+    ],
+    "hourly_cost_myr": 110
+  }
+]

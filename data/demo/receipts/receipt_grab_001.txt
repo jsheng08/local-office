@@ -1,0 +1,21 @@
+Restoran Nasi Kandar Seri Pantai (SYNTHETIC)
+No. 12, Jalan Plumbum, Seksyen 7
+40000 Shah Alam, Selangor
+SST No: W10-0000-00000000 (fake)
+
+Date: 2026-10-09   Time: 13:12
+Receipt No: SP-0001
+--------------------------------
+Nasi Kandar Ayam x4       RM  88.00
+Ikan Bakar x2             RM  44.00
+Teh Tarik x4              RM  16.00
+Roti Canai x4             RM  20.00
+--------------------------------
+Subtotal                  RM 168.00
+SST 6%                    RM  10.08
+TOTAL                     RM 178.08
+--------------------------------
+Payment: Card
+Note: Client lunch – SPL
+
+Thank you! Terima kasih!

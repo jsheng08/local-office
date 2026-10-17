@@ -1,0 +1,14 @@
+{
+  "fiscal_year": 2026,
+  "variance_threshold_pct": 10,
+  "projects": {
+    "PRJ-SPL": {
+      "contract_value_myr": 480000,
+      "approved_budget_myr": 410000
+    },
+    "PRJ-KLN": {
+      "contract_value_myr": 210000,
+      "approved_budget_myr": 180000
+    }
+  }
+}

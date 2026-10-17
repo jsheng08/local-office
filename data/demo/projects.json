@@ -1,0 +1,53 @@
+[
+  {
+    "id": "PRJ-SPL",
+    "name": "SPL Driver & Dispatch Portal",
+    "client": "Sinar Pantai Logistics Sdn Bhd",
+    "status": "active",
+    "budget_myr": 410000,
+    "start": "2026-10-01",
+    "deadline": "2027-02-06",
+    "kanban": []
+  },
+  {
+    "id": "PRJ-KLN",
+    "name": "Klinik Seri Melur Appointment App",
+    "client": "Klinik Seri Melur Sdn Bhd",
+    "status": "active",
+    "budget_myr": 180000,
+    "start": "2026-07-01",
+    "deadline": "2026-12-31",
+    "kanban": [
+      {
+        "id": "KLN-1",
+        "title": "Patient appointment booking flow",
+        "priority": "must",
+        "status": "in_progress",
+        "estimate_h": 120,
+        "assignee": "S05",
+        "source_ref": "KLN brief \u00a72",
+        "approved": true
+      },
+      {
+        "id": "KLN-2",
+        "title": "SMS appointment reminders",
+        "priority": "should",
+        "status": "todo",
+        "estimate_h": 40,
+        "assignee": "S08",
+        "source_ref": "KLN brief \u00a74",
+        "approved": true
+      },
+      {
+        "id": "KLN-3",
+        "title": "Regression test suite for booking",
+        "priority": "should",
+        "status": "todo",
+        "estimate_h": 32,
+        "assignee": "S07",
+        "source_ref": "KLN brief \u00a77",
+        "approved": true
+      }
+    ]
+  }
+]
